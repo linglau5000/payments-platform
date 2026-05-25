@@ -1,28 +1,29 @@
-# Multi-stage build — keeps the final image small and free of build tools
+# Multi-stage build — builder installs deps into a venv, final stage copies it in
 FROM python:3.12-slim AS builder
 
 WORKDIR /build
 
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
 COPY requirements.txt .
-RUN pip install --no-cache-dir --user -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
 
 FROM python:3.12-slim
 
-# Non-root user — containers should never run as root
+# Non-root user
 RUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser
 
 WORKDIR /app
 
-# Copy installed packages from builder stage
-COPY --from=builder /root/.local /home/appuser/.local
+COPY --from=builder /opt/venv /opt/venv
 
 COPY app/ ./app/
 COPY alembic/ ./alembic/
 COPY alembic.ini ./alembic.ini
 
-# Ensure scripts in .local are usable
-ENV PATH=/home/appuser/.local/bin:$PATH
+ENV PATH="/opt/venv/bin:$PATH"
 ENV PYTHONPATH=/app
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1

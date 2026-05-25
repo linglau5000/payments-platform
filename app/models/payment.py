@@ -3,7 +3,6 @@ from datetime import datetime, timezone
 from typing import List, Optional
 
 from sqlalchemy import DateTime, ForeignKey, Numeric, String
-from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -21,7 +20,7 @@ class Payment(Base):
     __tablename__ = "payments"
 
     id: Mapped[str] = mapped_column(
-        UUID(as_uuid=False), primary_key=True, default=_uuid
+        String(36), primary_key=True, default=_uuid
     )
     amount: Mapped[float] = mapped_column(Numeric(18, 2), nullable=False)
     currency: Mapped[str] = mapped_column(String(3), nullable=False)
@@ -53,10 +52,10 @@ class LedgerEntry(Base):
     __tablename__ = "ledger_entries"
 
     id: Mapped[str] = mapped_column(
-        UUID(as_uuid=False), primary_key=True, default=_uuid
+        String(36), primary_key=True, default=_uuid
     )
     payment_id: Mapped[str] = mapped_column(
-        UUID(as_uuid=False), ForeignKey("payments.id"), nullable=False, index=True
+        String(36), ForeignKey("payments.id"), nullable=False, index=True
     )
     debit_account: Mapped[str] = mapped_column(String(255), nullable=False)
     credit_account: Mapped[str] = mapped_column(String(255), nullable=False)

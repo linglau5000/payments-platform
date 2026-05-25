@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: settlement-worker
+  namespace: payments
+spec:
+  replicas: 1   # Single worker to avoid concurrent settlement races
+  selector:
+    matchLabels:
+      app: settlement-worker
+  template:
+    metadata:
+      labels:
+        app: settlement-worker
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+        - name: settlement-worker
+          image: payments-worker:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: payments-secret
+                  key: DATABASE_URL
+            - name: POLL_INTERVAL_SECONDS
+              valueFrom:
+                configMapKeyRef:
+                  name: payments-config
+                  key: POLL_INTERVAL_SECONDS
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "200m"
+              memory: "256Mi"
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
